@@ -1,4 +1,4 @@
-from abc import abstractmethod
+from abc import abstractmethod, abstractproperty
 from google.appengine.ext import ndb
 from google.appengine.ext.ndb import polymodel
 import requests
@@ -13,6 +13,7 @@ CROLL_DF = '%Y-%m-%d'
 JUMP_FREE_DF = '%B0%d,0%Y'
 JUMP_DF = "%b %d, %Y"
 CMX_DF = "%d %B %Y"
+
 
 
 class Chapter(ndb.Model):
@@ -31,9 +32,19 @@ class Series(polymodel.PolyModel):
     url = ndb.StringProperty()
     lookup_url = ndb.StringProperty()
 
+    def get_key(self):
+        return self.key.urlsafe()
+
+    @abstractproperty
+    def name(self):
+        pass
+
     @abstractmethod
     def check_for_new_chapter(self):
         pass
+
+    def source(self):
+        return self.name
 
     def add_chapter(self, number, link, thumb, published):
         c = Chapter(parent=self.key, chapter_no=number, published=published, url=link, thumbnail=thumb)
@@ -42,7 +53,6 @@ class Series(polymodel.PolyModel):
 
     def get_last_published(self):
         last_chapter = Chapter.query(ancestor=self.key).order(Chapter.published).fetch(1)
-        print str(last_chapter)
         if len(last_chapter) == 0:
             return datetime.min
         else:
@@ -52,8 +62,43 @@ class Series(polymodel.PolyModel):
     def get_all(cls):
         return Series.query().fetch()
 
+    @classmethod
+    def delete(cls, string):
+        key = ndb.Key(urlsafe=string)
+        series = key.get()
+        chapters = Chapter.query(ancestor=key).fetch()
+        for chapter in chapters:
+            chapter.key.delete()
+        key.delete()
+        return series
+
+    @classmethod
+    def add(cls, title, source, url, lookup):
+        if source.lower() == 'comixology':
+            s = Comixology(title=title, url=url, lookup_url=lookup)
+            s.put()
+            return s
+        elif source.lower() == 'crunchyroll':
+            s = Crunchyroll(title=title, url=url, lookup_url=lookup)
+            s.put()
+            return s
+        elif source.lower() == 'jumpfree':
+            s = JumpFree(title=title, url=url, lookup_url=lookup)
+            s.put()
+            return s
+        elif source.lower() == 'jumpmagazine':
+            s = JumpMag(title=title, url=url, lookup_url=lookup)
+            s.put()
+            return s
+        else:
+            return None
+
 
 class Crunchyroll(Series):
+    @property
+    def name(self):
+        return "Crunchyroll Manga"
+
     def check_for_new_chapter(self):
         r2 = requests.get(self.lookup_url)
         r_json = r2.json()
@@ -68,6 +113,10 @@ class Crunchyroll(Series):
 
 
 class Comixology(Series):
+    @property
+    def name(self):
+        return "Comixology"
+
     def check_for_new_chapter(self):
         r = requests.get(self.url)
         soup = BeautifulSoup(r.text, 'lxml')
@@ -88,7 +137,7 @@ class Comixology(Series):
             if chapter.find('a', class_='buy-action'):
                 found = True
                 thumb = chapter.find('img')['src']
-                number = chapter.find('h6').text.split('#')[1]
+                number = int(chapter.find('h6').text.split('#')[1])
                 link = chapter.find('a', class_='content-details')['href']
                 date = Comixology._get_date(link)
                 if date > self.get_last_published():
@@ -114,6 +163,11 @@ class Comixology(Series):
 
 
 class JumpFree(Series):
+
+    @property
+    def name(self):
+        return "WSJ Free Section"
+
     def check_for_new_chapter(self):
         r = requests.get(self.url)
         soup = BeautifulSoup(r.text, 'lxml')
@@ -132,6 +186,10 @@ class JumpFree(Series):
 
 
 class JumpMag(Series):
+    @property
+    def name(self):
+        return "WSJ Magazine"
+
     def check_for_new_chapter(self):
         r = requests.get(self.url)
         soup = BeautifulSoup(r.text, 'lxml')

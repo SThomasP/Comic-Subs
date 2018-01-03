@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta charset="UTF-8">
+    <title>Current Subscriptions</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    {% for message in messages %}
+      <h4>{{ message }}</h4>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+<table style="width: 100%">
+    <tr>
+        <th>
+            Name
+        </th>
+        <th>
+            Source
+        </th>
+        <th>
+            Actions
+        </th>
+    </tr>
+    {% for series in series_list %}
+    <tr>
+        <td>
+            {{series.title}}
+        </td>
+        <td>
+            {{series.source()}}
+        </td>
+        <td>
+            <a href="/delete?key={{series.get_key()}}">Delete</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<a href="/add">Add New</a>
+
+</body>
+</html>

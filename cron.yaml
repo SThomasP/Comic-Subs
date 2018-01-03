@@ -1,4 +1,4 @@
 cron:
 - description: "Check For New Chapters"
-  url: /admin/check
-  schedule: every 6 hours
+  url: /check
+  schedule: every 1 hours
