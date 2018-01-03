@@ -2,15 +2,22 @@ import flask
 from subs import app
 from datastore import Series, Chapter
 from feed import Feed
+from google.appengine.api import taskqueue
 
 
 @app.route("/check")
 def check():
     series_list = Series.get_all()
     for series in series_list:
-        print series.title
-        series.check_for_new_chapter()
+        taskqueue.add(queue_name="check-queue", url='/check/'+series.get_key(), )
     return "", 200
+
+
+@app.route("/check/<string:key>", methods=['POST'])
+def check_series(key):
+    series = Series.get(key)
+    series.check_for_new_chapter()
+    return ""
 
 
 @app.route("/")

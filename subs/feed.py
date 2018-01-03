@@ -1,5 +1,6 @@
 from feedgen.feed import FeedGenerator
 from pytz import utc
+import traceback
 
 
 class Feed:
@@ -11,7 +12,7 @@ class Feed:
 
     def add_chapter(self, chapter, series):
         fe = self.feed.add_entry()
-        fe.title("{} #{}".format(series.title, chapter.chapter_no))
+        fe.title(u"{} #{}".format(series.title, chapter.chapter_no))
         fe.guid(chapter.url)
         fe.link(href=chapter.url)
         fe.description('<p><img src="{}" width="200"> </img></p>'.format(chapter.thumbnail))

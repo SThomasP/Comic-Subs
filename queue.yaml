@@ -1,0 +1,6 @@
+queue:
+- name: check-queue
+  rate: 6/m
+  bucket_size: 40
+  max_concurrent_requests: 1
+

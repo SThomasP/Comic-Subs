@@ -49,6 +49,10 @@ class Series(polymodel.PolyModel):
     def add_chapter(self, number, link, thumb, published):
         c = Chapter(parent=self.key, chapter_no=number, published=published, url=link, thumbnail=thumb)
         c.put()
+        chapters = Chapter.query(ancestor=self.key).order(-Chapter.published).fetch()
+        while len(chapters) > 5:
+            key = chapters.pop().key
+            key.delete()
         return c
 
     def get_last_published(self):
@@ -92,6 +96,10 @@ class Series(polymodel.PolyModel):
             return s
         else:
             return None
+
+    @classmethod
+    def get(cls, key):
+        return ndb.Key(urlsafe=key).get()
 
 
 class Crunchyroll(Series):

@@ -28,7 +28,7 @@
     {% for series in series_list %}
     <tr>
         <td>
-            {{series.title}}
+            <a href="{{series.url}}">{{series.title}} </a>
         </td>
         <td>
             {{series.source()}}
