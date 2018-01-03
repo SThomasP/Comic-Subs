@@ -1,0 +1,8 @@
+feedgen==0.6.1
+flask==0.12.2
+beautifulsoup4==4.6.0
+google-api-python-client
+werkzeug==0.12.2
+requests
+requests-toolbelt
+pytz
