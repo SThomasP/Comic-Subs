@@ -9,7 +9,7 @@ from google.appengine.api import taskqueue
 def check():
     series_list = Series.get_all()
     for series in series_list:
-        taskqueue.add(queue_name="check-queue", url='/check/'+series.get_key(), )
+        series.queue_new_chapter_check()
     return "", 200
 
 

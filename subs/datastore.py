@@ -5,6 +5,7 @@ import requests
 import requests_toolbelt.adapters.appengine
 from datetime import datetime
 from bs4 import BeautifulSoup
+from google.appengine.api import taskqueue
 
 requests_toolbelt.adapters.appengine.monkeypatch()
 
@@ -42,6 +43,9 @@ class Series(polymodel.PolyModel):
     @abstractmethod
     def check_for_new_chapter(self):
         pass
+
+    def queue_new_chapter_check(self):
+        taskqueue.add(queue_name="check-queue", url='/check/' + self.get_key())
 
     def source(self):
         return self.name
@@ -81,18 +85,22 @@ class Series(polymodel.PolyModel):
         if source.lower() == 'comixology':
             s = Comixology(title=title, url=url, lookup_url=lookup)
             s.put()
+            s.queue_new_chapter_check()
             return s
         elif source.lower() == 'crunchyroll':
             s = Crunchyroll(title=title, url=url, lookup_url=lookup)
             s.put()
+            s.queue_new_chapter_check()
             return s
         elif source.lower() == 'jumpfree':
             s = JumpFree(title=title, url=url, lookup_url=lookup)
             s.put()
+            s.queue_new_chapter_check()
             return s
         elif source.lower() == 'jumpmagazine':
             s = JumpMag(title=title, url=url, lookup_url=lookup)
             s.put()
+            s.queue_new_chapter_check()
             return s
         else:
             return None
