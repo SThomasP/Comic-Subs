@@ -2,8 +2,14 @@ import flask
 from subs import app
 from datastore import Series, Chapter
 from feed import Feed
-from google.appengine.api import taskqueue
+import logging
 
+
+@app.before_first_request
+def setup_logging():
+    if not app.debug:
+        app.logger.addHandler(logging.StreamHandler())
+        app.logger.setLevel(logging.ERROR)
 
 @app.route("/check")
 def check():

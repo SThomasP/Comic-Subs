@@ -16,7 +16,6 @@ JUMP_DF = "%b %d, %Y"
 CMX_DF = "%d %B %Y"
 
 
-
 class Chapter(ndb.Model):
     chapter_no = ndb.IntegerProperty()
     published = ndb.DateTimeProperty()
@@ -60,7 +59,7 @@ class Series(polymodel.PolyModel):
         return c
 
     def get_last_published(self):
-        last_chapter = Chapter.query(ancestor=self.key).order(Chapter.published).fetch(1)
+        last_chapter = Chapter.query(ancestor=self.key).order(-Chapter.published).fetch(1)
         if len(last_chapter) == 0:
             return datetime.min
         else:
@@ -68,7 +67,7 @@ class Series(polymodel.PolyModel):
 
     @classmethod
     def get_all(cls):
-        return Series.query().fetch()
+        return Series.query().order(Series.title).fetch()
 
     @classmethod
     def delete(cls, string):
