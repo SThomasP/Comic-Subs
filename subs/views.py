@@ -52,8 +52,7 @@ def get_feed():
     chapters = Chapter.lookup_chapters()
     feed = Feed(flask.request.url_root)
     for chapter in chapters:
-        series = chapter.key.parent().get()
-        feed.add_chapter(chapter, series)
+        feed.add_chapter(chapter)
     resp = flask.make_response(feed.rss(), 200)
     resp.headers['content-type'] = 'application/rss+xml'
     return resp

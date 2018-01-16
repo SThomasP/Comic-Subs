@@ -9,7 +9,6 @@ from google.appengine.api import taskqueue
 
 requests_toolbelt.adapters.appengine.monkeypatch()
 
-
 CROLL_DF = '%Y-%m-%d'
 JUMP_FREE_DF = '%B0%d,0%Y'
 JUMP_DF = "%b %d, %Y"
@@ -17,14 +16,19 @@ CMX_DF = "%d %B %Y"
 
 
 class Chapter(ndb.Model):
-    chapter_no = ndb.IntegerProperty()
+    chapter_no = ndb.FloatProperty()
     published = ndb.DateTimeProperty()
     url = ndb.StringProperty()
     thumbnail = ndb.StringProperty()
+    title = ndb.ComputedProperty(lambda self: self.generate_title())
 
     @classmethod
     def lookup_chapters(cls):
         return Chapter.query().order(Chapter.published).fetch()
+
+    def generate_title(self):
+        series_title = self.key.parent().get().title
+        return u"{} #{:g}".format(series_title, self.chapter_no)
 
 
 class Series(polymodel.PolyModel):
@@ -36,7 +40,7 @@ class Series(polymodel.PolyModel):
         return self.key.urlsafe()
 
     @abstractproperty
-    def name(self):
+    def source(self):
         pass
 
     @abstractmethod
@@ -46,8 +50,6 @@ class Series(polymodel.PolyModel):
     def queue_new_chapter_check(self):
         taskqueue.add(queue_name="check-queue", url='/check/' + self.get_key())
 
-    def source(self):
-        return self.name
 
     def add_chapter(self, number, link, thumb, published):
         c = Chapter(parent=self.key, chapter_no=number, published=published, url=link, thumbnail=thumb)
@@ -111,14 +113,14 @@ class Series(polymodel.PolyModel):
 
 class Crunchyroll(Series):
     @property
-    def name(self):
+    def source(self):
         return "Crunchyroll Manga"
 
     def check_for_new_chapter(self):
         r2 = requests.get(self.lookup_url)
         r_json = r2.json()
         latest = r_json['chapters'][::-1][0]
-        c_number = int(float(latest['number']))
+        c_number = float(latest['number'])
         c_img_url = latest['thumb_img']
         c_link_url = 'http://www.crunchyroll.com/comics_read/manga?volume_id={}&chapter_num={}'.format(
             latest['volume_id'], c_number)
@@ -129,7 +131,7 @@ class Crunchyroll(Series):
 
 class Comixology(Series):
     @property
-    def name(self):
+    def source(self):
         return "Comixology"
 
     def check_for_new_chapter(self):
@@ -152,14 +154,14 @@ class Comixology(Series):
             if chapter.find('a', class_='buy-action'):
                 found = True
                 thumb = chapter.find('img')['src']
-                number = int(chapter.find('h6').text.split('#')[1])
+                number = float(chapter.find('h6').text.split('#')[1])
                 link = chapter.find('a', class_='content-details')['href']
                 date = Comixology._get_date(link)
                 if date > self.get_last_published():
-                    self.add_chapter(number,link, thumb, date)
+                    self.add_chapter(number, link, thumb, date)
 
     def _get_chapters(self, page_no):
-        r = requests.get(self.url+'?Issues_pg={}'.format(page_no))
+        r = requests.get(self.url + '?Issues_pg={}'.format(page_no))
         soup = BeautifulSoup(r.text, 'lxml')
         chapter_list = soup.find('div', class_='Issues')
         chapters = chapter_list.ul.contents
@@ -168,7 +170,7 @@ class Comixology(Series):
     @staticmethod
     def _get_date(url):
         r = requests.get(url)
-        soup = BeautifulSoup(r.text,'lxml')
+        soup = BeautifulSoup(r.text, 'lxml')
         titles = soup.find_all('h4', class_='subtitle')
         for title in titles:
             if title.text == 'Digital Release Date':
@@ -178,9 +180,8 @@ class Comixology(Series):
 
 
 class JumpFree(Series):
-
     @property
-    def name(self):
+    def source(self):
         return "WSJ Free Section"
 
     def check_for_new_chapter(self):
@@ -193,7 +194,7 @@ class JumpFree(Series):
         thumb = chapter.find('img')['data-original']
         link_url = 'https://viz.com{}'.format(chapter('a')[0]['href'])
         ctitle = chapter.find('div', class_='type-md').text
-        number = int(ctitle[9:len(ctitle)])
+        number = float(ctitle[9:len(ctitle)])
         date = chapter.find('div', class_='mar-b-md').text.replace(' ', '0')
         date = datetime.strptime(date, JUMP_FREE_DF)
         if date > self.get_last_published():
@@ -202,16 +203,16 @@ class JumpFree(Series):
 
 class JumpMag(Series):
     @property
-    def name(self):
+    def source(self):
         return "WSJ Magazine"
 
     def check_for_new_chapter(self):
         r = requests.get(self.url)
         soup = BeautifulSoup(r.text, 'lxml')
         link1 = soup.find('a', class_='product-thumb')
-        thumb1 =link1.img['src']
+        thumb1 = link1.img['src']
         link1 = "https://www.viz.com" + link1['href']
-        number1 = int(link1.rsplit('/', 1)[0].rsplit('-',1)[1])
+        number1 = float(link1.rsplit('/', 1)[0].rsplit('-', 1)[1])
         date1 = datetime.strptime(soup.find('h3').text, JUMP_DF)
         if date1 > self.get_last_published():
-            self.add_chapter(number1,link1, thumb1, date1)
+            self.add_chapter(number1, link1, thumb1, date1)
