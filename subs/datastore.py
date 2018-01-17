@@ -135,22 +135,33 @@ class Comixology(Series):
         return "Comixology"
 
     def check_for_new_chapter(self):
+
+        def extract_chapters(chapter_soup):
+            chapter_list = chapter_soup.find('div', class_='Issues')
+            extracted = chapter_list.ul.contents
+            while '\n' in extracted:
+                extracted.remove('\n')
+            return extracted
+
+        def get_chapters(page_no):
+            r2 = requests.get(self.url + '?Issues_pg={}'.format(page_no))
+            soup2 = BeautifulSoup(r2.text, 'lxml')
+            extracted = extract_chapters(soup2)
+            return extracted
+
         r = requests.get(self.url)
         soup = BeautifulSoup(r.text, 'lxml')
-        chapter_list = soup.find('div', class_='Issues')
-        if chapter_list.find('div', class_='pager'):
-            page_count = int(chapter_list.find('div', class_='pager')['data-page-count'])
-            chapters = self._get_chapters(page_count)
+        pager = soup.find('div', class_='Issues').find('div', class_='pager')
+        if pager:
+            page_count = int(pager['data-page-count'])
+            chapters = get_chapters(page_count)
         else:
-            chapters = chapter_list.ul.contents
-        while '\n' in chapters:
-            chapters.remove('\n')
-        chapters.reverse()
+            chapters = extract_chapters(soup)
+            page_count = 1
+
         found = False
-        f = -1
         while not found:
-            f += 1
-            chapter = chapters[f]
+            chapter = chapters.pop()
             if chapter.find('a', class_='buy-action'):
                 found = True
                 thumb = chapter.find('img')['src']
@@ -159,13 +170,16 @@ class Comixology(Series):
                 date = Comixology._get_date(link)
                 if date > self.get_last_published():
                     self.add_chapter(number, link, thumb, date)
+            elif len(chapters) == 0 and page_count > 1:
+                page_count -= 1
+                if page_count == 1:
+                    chapters += extract_chapters(soup)
+                else:
+                    chapters += get_chapters(page_count)
 
-    def _get_chapters(self, page_no):
-        r = requests.get(self.url + '?Issues_pg={}'.format(page_no))
-        soup = BeautifulSoup(r.text, 'lxml')
-        chapter_list = soup.find('div', class_='Issues')
-        chapters = chapter_list.ul.contents
-        return chapters
+
+
+
 
     @staticmethod
     def _get_date(url):
