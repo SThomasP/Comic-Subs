@@ -1,3 +1,4 @@
+# check another series every 10 seconds
 queue:
 - name: check-queue
   rate: 6/m

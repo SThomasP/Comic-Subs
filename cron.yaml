@@ -1,3 +1,4 @@
+# schedule new checks every hour
 cron:
 - description: "Check For New Chapters"
   url: /check

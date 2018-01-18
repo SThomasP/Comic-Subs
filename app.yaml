@@ -7,9 +7,11 @@ handlers:
   static_files: favicon.ico
   upload: favicon\.ico
 
+  # everyone can access the rss
 - url: /subscriptions.rss
   script: main.app
 
+  # only the admin can access anything else
 - url: .*
   login: admin
   script: main.app

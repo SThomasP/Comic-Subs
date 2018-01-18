@@ -4,6 +4,7 @@ from datastore import Series, Chapter
 from feed import Feed
 
 
+# queue all series for a new chapter check
 @app.route("/check")
 def check():
     series_list = Series.get_all()
@@ -12,6 +13,7 @@ def check():
     return "", 200
 
 
+# check a series for a new chapter
 @app.route("/check/<string:key>", methods=['POST'])
 def check_series(key):
     series = Series.get(key)
@@ -19,12 +21,14 @@ def check_series(key):
     return ""
 
 
+# view all series and add and remove them
 @app.route("/")
 def view():
     series_list = Series.get_all()
     return flask.render_template('view.html', series_list=series_list)
 
 
+# delete a series from the list
 @app.route("/delete")
 def delete():
     key = flask.request.args.get('key')
@@ -33,16 +37,21 @@ def delete():
     return flask.redirect(flask.url_for("view"), code=303)
 
 
+# add a series to the list
 @app.route("/add", methods=['GET', 'POST'])
 def add():
     url = flask.request.form['url']
     s = Series.add(url)
-    s.put()
-    s.queue_new_chapter_check()
-    flask.flash(s.title + ' added')
+    if s is not None:
+        s.put()
+        s.queue_new_chapter_check()
+        flask.flash(s.title + ' added')
+    else:
+        flask.flash("Cannot add")
     return flask.redirect(flask.url_for("view"), code=303)
 
 
+# get the rss feed (open to all)
 @app.route("/subscriptions.rss")
 def get_feed():
     chapters = Chapter.lookup_chapters()
@@ -50,5 +59,6 @@ def get_feed():
     for chapter in chapters:
         feed.add_chapter(chapter)
     resp = flask.make_response(feed.rss(), 200)
+    # set the header
     resp.headers['content-type'] = 'application/rss+xml'
     return resp
