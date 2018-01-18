@@ -6,6 +6,7 @@ import requests_toolbelt.adapters.appengine
 from datetime import datetime
 from bs4 import BeautifulSoup
 from google.appengine.api import taskqueue
+import urlparse
 
 requests_toolbelt.adapters.appengine.monkeypatch()
 
@@ -50,7 +51,6 @@ class Series(polymodel.PolyModel):
     def queue_new_chapter_check(self):
         taskqueue.add(queue_name="check-queue", url='/check/' + self.get_key())
 
-
     def add_chapter(self, number, link, thumb, published):
         c = Chapter(parent=self.key, chapter_no=number, published=published, url=link, thumbnail=thumb)
         c.put()
@@ -82,29 +82,23 @@ class Series(polymodel.PolyModel):
         return series
 
     @classmethod
-    def add(cls, title, source, url, lookup):
-        if source.lower() == 'comixology':
-            s = Comixology(title=title, url=url, lookup_url=lookup)
-            s.put()
-            s.queue_new_chapter_check()
-            return s
-        elif source.lower() == 'crunchyroll':
-            s = Crunchyroll(title=title, url=url, lookup_url=lookup)
-            s.put()
-            s.queue_new_chapter_check()
-            return s
-        elif source.lower() == 'jumpfree':
-            s = JumpFree(title=title, url=url, lookup_url=lookup)
-            s.put()
-            s.queue_new_chapter_check()
-            return s
-        elif source.lower() == 'jumpmagazine':
-            s = JumpMag(title=title, url=url, lookup_url=lookup)
-            s.put()
-            s.queue_new_chapter_check()
-            return s
+    def add(cls, url):
+        o = urlparse.urlparse(url)
+        source = o.netloc.split(".")[1]
+        if source =="comixology":
+            return Comixology.create(url)
+        elif source == 'crunchyroll':
+            return Crunchyroll.create(url)
+        elif source == 'viz':
+            path = o.path.split("/")[1::]
+            if path[0::1] == ['shonenjump','chapters']:
+                return JumpFree.create(url)
+            elif path[0] == 'shonenjump':
+                return JumpMag(title="Weekly Shonen Jump", url=url, lookup_url=None)
+
         else:
             return None
+
 
     @classmethod
     def get(cls, key):
@@ -128,8 +122,26 @@ class Crunchyroll(Series):
         if c_date > self.get_last_published():
             self.add_chapter(c_number, c_link_url, c_img_url, c_date)
 
+    @classmethod
+    def create(cls, url):
+        r = requests.get(url)
+        soup = BeautifulSoup(r.text, 'lxml')
+        title = soup.find('h1', class_='ellipsis').text.split(">")[1].strip()
+        vol_id = soup.find('li', class_='volume-simul')['volume_id']
+        lookup_url = "http://api-manga.crunchyroll.com/list_chapters?volume_id={}".format(vol_id)
+        return Crunchyroll(title=title, url=url, lookup_url=lookup_url)
+
 
 class Comixology(Series):
+
+    @classmethod
+    def create(cls, url):
+        r = requests.get(url)
+        soup = BeautifulSoup(r.text, 'lxml')
+        title = soup.find("h1", itemprop="name").text
+        s = Comixology(title=title, url=url, lookup_url=None)
+        return s
+
     @property
     def source(self):
         return "Comixology"
@@ -160,7 +172,7 @@ class Comixology(Series):
             page_count = 1
 
         found = False
-        while not found:
+        while len(chapters) > 0 or not found:
             chapter = chapters.pop()
             if chapter.find('a', class_='buy-action'):
                 found = True
@@ -213,6 +225,14 @@ class JumpFree(Series):
         date = datetime.strptime(date, JUMP_FREE_DF)
         if date > self.get_last_published():
             self.add_chapter(number, link_url, thumb, date)
+
+    @classmethod
+    def create(cls, url):
+        o = urlparse.urlparse(url)
+        r = requests.get('https://www.viz.com/shonenjump/chapters/all')
+        soup = BeautifulSoup(r.text, 'lxml')
+        title = soup.find('a', href=o.path).text.split("\n\n\n")[1].strip()
+        return JumpFree(title=title, url=url, lookup_url=None)
 
 
 class JumpMag(Series):

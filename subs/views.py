@@ -35,16 +35,12 @@ def delete():
 
 @app.route("/add", methods=['GET', 'POST'])
 def add():
-    if flask.request.method == 'POST':
-        title = flask.request.form['title']
-        source = flask.request.form['source']
-        url = flask.request.form['url']
-        lookup = flask.request.form['lookup']
-        s = Series.add(title, source, url, lookup)
-        flask.flash(s.title + ' added')
-        return flask.redirect(flask.url_for("view"), code=303)
-    else:
-        return flask.render_template("add.html")
+    url = flask.request.form['url']
+    s = Series.add(url)
+    s.put()
+    s.queue_new_chapter_check()
+    flask.flash(s.title + ' added')
+    return flask.redirect(flask.url_for("view"), code=303)
 
 
 @app.route("/subscriptions.rss")

@@ -40,7 +40,14 @@
     {% endfor %}
 </table>
 
-<a href="/add">Add New</a>
+<h5 >Add New</h5>
+<form method="post" action="/add">
+    <label>
+        URL:
+        <input type="text" name="url">
+    </label>
+    <input type="submit" value="ADD">
+</form>
 
 </body>
 </html>
