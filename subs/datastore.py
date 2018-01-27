@@ -213,10 +213,14 @@ class Comixology(Series):
                 thumb = chapter.find('img')['src']
                 number = float(chapter.find('h6').text.split('#')[1])
                 link = chapter.find('a', class_='content-details')['href']
+                series_id = self.url.rsplit("/",1)[1]
+                issue_id = link.rsplit("/",1)[1]
+                url_base = link.rsplit("/",3)[0]
+                read_link = url_base + "/comic-reader/" + series_id + "/" + issue_id
                 date = Comixology._get_date(link)
                 # check the date
                 if date > self.get_last_published():
-                    self.add_chapter(number, link, thumb, date)
+                    self.add_chapter(number, read_link, thumb, date)
             # if it's not on that page go back a page and keep trying
             elif len(chapters) == 0 and page_count > 1:
                 page_count -= 1
@@ -252,7 +256,7 @@ class JumpFree(Series):
             chapters.remove('\n')
         chapter = chapters[0]
         thumb = chapter.find('img')['data-original']
-        link_url = 'https://viz.com{}'.format(chapter('a')[0]['href'])
+        link_url = 'https://viz.com{}?read=1'.format(chapter('a')[0]['href'])
         ctitle = chapter.find('div', class_='type-md').text
         number = float(ctitle[9:len(ctitle)])
         date = chapter.find('div', class_='mar-b-md').text.replace(' ', '0')
@@ -281,7 +285,7 @@ class JumpMag(Series):
         soup = BeautifulSoup(r.text, 'lxml')
         link1 = soup.find('a', class_='product-thumb')
         thumb1 = link1.img['src']
-        link1 = "https://www.viz.com" + link1['href']
+        link1 = "https://www.viz.com" + link1['href'] + "?read=1"
         number1 = float(link1.rsplit('/', 1)[0].rsplit('-', 1)[1])
         date1 = datetime.strptime(soup.find('h3').text, JUMP_DF)
         if date1 > self.get_last_published():
