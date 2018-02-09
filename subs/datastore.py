@@ -70,6 +70,7 @@ class Series(polymodel.PolyModel):
             key = chapters.pop().key
             key.delete()
         return c
+
     # get the date of the last chapter published
     def get_last_published(self):
         last_chapter = Chapter.query(ancestor=self.key).order(-Chapter.published).fetch(1)
@@ -211,7 +212,8 @@ class Comixology(Series):
                 # get the info
                 found = True
                 thumb = chapter.find('img')['src']
-                number = float(chapter.find('h6').text.split('#')[1])
+                n = chapter.find('h6').text.split(' ')[1].split('#')[1]
+                number = float(n)
                 link = chapter.find('a', class_='content-details')['href']
                 series_id = self.url.rsplit("/",1)[1]
                 issue_id = link.rsplit("/",1)[1]
