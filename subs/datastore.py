@@ -144,10 +144,13 @@ class Crunchyroll(Series):
         c_link_url = 'http://www.crunchyroll.com/comics_read/manga?volume_id={}&chapter_num={}'.format(
             latest['volume_id'], c_number)
         # and get the date
-        c_date = datetime.strptime(latest['availability_start'][0:10], CROLL_DF)
+        try:
+            c_date = datetime.strptime(latest['availability_start'][0:10], CROLL_DF)
+        except ValueError:
+            c_date = datetime.strptime(latest['updated'][0:10], CROLL_DF)
         # check to see if it's "new"
         if c_date > self.get_last_published():
-            # if so, addi t
+            # if so, add it
             self.add_chapter(c_number, c_link_url, c_img_url, c_date)
 
     # find the title and lookup url for the series object
