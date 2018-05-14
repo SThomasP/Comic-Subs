@@ -110,7 +110,7 @@ class Series(polymodel.PolyModel):
             return Crunchyroll.create(url)
         elif source == 'viz':
             path = o.path.split("/")[1::]
-            if path[0::1] == ['shonenjump','chapters']:
+            if path[0:2] == ['shonenjump','chapters']:
                 return JumpFree.create(url)
             elif path[0] == 'shonenjump':
                 return JumpMag(title="Weekly Shonen Jump", url=url, lookup_url=None)
@@ -278,7 +278,6 @@ class JumpFree(Series):
         title = soup.find('a', href=o.path).text.split("\n\n\n")[1].strip()
         return JumpFree(title=title, url=url, lookup_url=None)
 
-
 class JumpMag(Series):
     @property
     def source(self):
@@ -291,7 +290,7 @@ class JumpMag(Series):
         link1 = soup.find('a', class_='product-thumb')
         thumb1 = link1.img['src']
         link1 = "https://www.viz.com" + link1['href'] + "?read=1"
-        number1 = float(link1.rsplit('/', 1)[0].rsplit('-', 1)[1])
+        number1 = float(link1.rsplit('/', 2)[0].rsplit('-', 1)[1])
         date1 = datetime.strptime(soup.find('h3').text, JUMP_DF)
         if date1 > self.get_last_published():
             self.add_chapter(number1, link1, thumb1, date1)
