@@ -85,12 +85,12 @@ class Series(polymodel.PolyModel):
     def get_all(cls):
         return Series.query().order(Series.title).fetch()
 
-    #delete a series
+    # delete a series
     @classmethod
     def delete(cls, string):
         key = ndb.Key(urlsafe=string)
         series = key.get()
-        #get the chapters of the series an delete them
+        # get the chapters of the series an delete them
         chapters = Chapter.query(ancestor=key).fetch()
         for chapter in chapters:
             chapter.key.delete()
