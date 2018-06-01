@@ -25,8 +25,8 @@ def check_series(key):
 # view all series and add and remove them
 @app.route("/")
 def view():
-    # series_list = Series.get_all()
-    return flask.render_template('view.html')
+    series_list = Series.get_all()
+    return flask.render_template('view.html', series_list=series_list)
 
 
 # delete a series from the list
@@ -39,7 +39,7 @@ def delete():
 
 
 # add a series to the list
-@app.route("/add", methods=['GET', 'POST'])
+@app.route("/add", methods=['POST'])
 def add():
     url = flask.request.form['url']
     s = Series.add(url)
