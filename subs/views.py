@@ -34,21 +34,24 @@ def view():
 def delete():
     key = flask.request.args.get('key')
     s = Series.delete(key)
-    flask.flash(s.title + " Deleted")
+    flask.flash(s.title + " Deleted", 'warning')
     return flask.redirect(flask.url_for("view"), code=303)
 
 
 # add a series to the list
-@app.route("/add", methods=['POST'])
+@app.route("/add", methods=['GET','POST'])
 def add():
     url = flask.request.form['url']
-    s = Series.add(url)
+    try:
+        s = Series.add(url)
+    except IndexError:
+        s = None
     if s is not None:
         s.put()
         s.queue_new_chapter_check()
         flask.flash(s.title + ' added', 'success')
     else:
-        flask.flash("Cannot add", 'danger')
+        flask.flash("Cannot add Comic", 'danger')
     return flask.redirect(flask.url_for("view"), code=303)
 
 

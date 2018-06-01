@@ -41,6 +41,7 @@ class Series(polymodel.PolyModel):
     title = ndb.StringProperty()
     url = ndb.StringProperty()
     lookup_url = ndb.StringProperty()
+    image = ndb.StringProperty()
 
     # get the key of the series object
     def get_key(self):
@@ -51,10 +52,19 @@ class Series(polymodel.PolyModel):
     def source(self):
         pass
 
+    # abstract property used to get the logo representation of the source
+    @abstractproperty
+    def sourcelogo(self):
+        pass
+
     # abstract method for the the various different sources get requests
     @abstractmethod
     def check_for_new_chapter(self):
         pass
+
+    def get_chapter_count(self):
+        chapters = Chapter.query(ancestor=self.key).order(-Chapter.published).fetch()
+        return len(chapters)
 
     # queue the check for a new chapter in this series
     def queue_new_chapter_check(self):
@@ -113,7 +123,7 @@ class Series(polymodel.PolyModel):
             if path[0:2] == ['shonenjump','chapters']:
                 return JumpFree.create(url)
             elif path[0] == 'shonenjump':
-                return JumpMag(title="Weekly Shonen Jump", url=url, lookup_url=None)
+                return JumpMag.create(url)
         # if no source return None
         else:
             return None
@@ -161,7 +171,8 @@ class Crunchyroll(Series):
         title = soup.find('h1', class_='ellipsis').text.split(">")[1].strip()
         vol_id = soup.find('li', class_='volume-simul')['volume_id']
         lookup_url = "http://api-manga.crunchyroll.com/list_chapters?volume_id={}".format(vol_id)
-        return Crunchyroll(title=title, url=url, lookup_url=lookup_url)
+        image = soup.find('img',class_="poster xsmall-margin-bottom").attrs['src']
+        return Crunchyroll(title=title, url=url, lookup_url=lookup_url, image = image)
 
 
 class Comixology(Series):
@@ -172,7 +183,8 @@ class Comixology(Series):
         r = requests.get(url)
         soup = BeautifulSoup(r.text, 'lxml')
         title = soup.find("h1", itemprop="name").text
-        s = Comixology(title=title, url=url, lookup_url=None)
+        image = soup.find("img", class_="series-cover").attrs['src']
+        s = Comixology(title=title, url=url, lookup_url=None, image=image)
         return s
 
     @property
@@ -218,14 +230,10 @@ class Comixology(Series):
                 n = chapter.find('h6').text.split(' ')[1].split('#')[1]
                 number = float(n)
                 link = chapter.find('a', class_='content-details')['href']
-                series_id = self.url.rsplit("/",1)[1]
-                issue_id = link.rsplit("/",1)[1]
-                url_base = link.rsplit("/",3)[0]
-                read_link = url_base + "/comic-reader/" + series_id + "/" + issue_id
                 date = Comixology._get_date(link)
                 # check the date
                 if date > self.get_last_published():
-                    self.add_chapter(number, read_link, thumb, date)
+                    self.add_chapter(number, link, thumb, date)
             # if it's not on that page go back a page and keep trying
             elif len(chapters) == 0 and page_count > 1:
                 page_count -= 1
@@ -261,7 +269,7 @@ class JumpFree(Series):
             chapters.remove('\n')
         chapter = chapters[0]
         thumb = chapter.find('img')['data-original']
-        link_url = 'https://viz.com{}?read=1'.format(chapter('a')[0]['href'])
+        link_url = 'https://viz.com{}'.format(chapter('a')[0]['href'])
         ctitle = chapter.find('div', class_='type-md').text
         number = float(ctitle[9:len(ctitle)])
         date = chapter.find('div', class_='mar-b-md').text.replace(' ', '0')
@@ -276,7 +284,8 @@ class JumpFree(Series):
         r = requests.get('https://www.viz.com/shonenjump/chapters/all')
         soup = BeautifulSoup(r.text, 'lxml')
         title = soup.find('a', href=o.path).text.split("\n\n\n")[1].strip()
-        return JumpFree(title=title, url=url, lookup_url=None)
+        image = soup.find('a', href='/shonenjump/chapters/my-hero-academia-vigilantes').img.attrs['data-original']
+        return JumpFree(title=title, url=url, lookup_url=None, image=image)
 
 class JumpMag(Series):
     @property
@@ -289,8 +298,12 @@ class JumpMag(Series):
         soup = BeautifulSoup(r.text, 'lxml')
         link1 = soup.find('a', class_='product-thumb')
         thumb1 = link1.img['src']
-        link1 = "https://www.viz.com" + link1['href'] + "?read=1"
+        link1 = "https://www.viz.com" + link1['href']
         number1 = float(link1.rsplit('/', 2)[0].rsplit('-', 1)[1])
         date1 = datetime.strptime(soup.find('h3').text, JUMP_DF)
         if date1 > self.get_last_published():
             self.add_chapter(number1, link1, thumb1, date1)
+
+    @classmethod
+    def create(cls, url):
+        return JumpMag(title="Weekly Shonen Jump", url="https://www.viz.com/shonenjump", lookup_url=None, image='http://static.libsyn.com/p/assets/4/0/5/0/4050c5d471d4740e/podcast_logo.png')
