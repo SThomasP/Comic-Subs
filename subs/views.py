@@ -17,6 +17,7 @@ def check():
 @app.route("/check/<string:key>", methods=['POST'])
 def check_series(key):
     series = Series.get(key)
+    print "{} - {}".format(series.title, series.source)
     series.check_for_new_chapter()
     return ""
 
@@ -24,8 +25,8 @@ def check_series(key):
 # view all series and add and remove them
 @app.route("/")
 def view():
-    series_list = Series.get_all()
-    return flask.render_template('view.html', series_list=series_list)
+    # series_list = Series.get_all()
+    return flask.render_template('view.html')
 
 
 # delete a series from the list
@@ -45,9 +46,9 @@ def add():
     if s is not None:
         s.put()
         s.queue_new_chapter_check()
-        flask.flash(s.title + ' added')
+        flask.flash(s.title + ' added', 'success')
     else:
-        flask.flash("Cannot add")
+        flask.flash("Cannot add", 'danger')
     return flask.redirect(flask.url_for("view"), code=303)
 
 
