@@ -19,6 +19,15 @@ nav{
 div.container {
     width: 95%;
     margin: auto;
+
+}
+
+.source-logo{
+    width: 50px;
+    position: absolute;
+    border-radius: 50%;
+    top: 4px;
+    left: 4px;
 }
 
 .series-list{
@@ -31,28 +40,41 @@ div.container {
     color: white;
 }
 
+.chapter{
+    font-family: "Permanent Marker", cursive;
+}
 .series-delete a:hover{
-    font-style: oblique;
 }
 
 .series-title{
-    color:white;
-    font-family: 'Permanent Marker', cursive;
     text-align: center;
     clear: both;
 
 }
 
+.series-title a{
+    color:white;
+    font-family: 'Permanent Marker', cursive;
+
+}
+
+.series-title a:hover{
+
+}
+
 .series{
-    width: 320px;
+    width: 270px;
     background-color: #008000;
     padding: 1%;
     margin: 1%;
 }
 
 .series-image{
-    width: 70%;
+    width: 80%;
     height: auto;
+    position: relative;
+    left: 0;
+    top: 0;
     margin-bottom: 1%;
     float: left;
 }

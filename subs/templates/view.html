@@ -40,10 +40,15 @@
     {% for series in series_list %}
         <div class="series">
             <img class="series-image" src="{{ series.image }}">
+            <img class="source-logo" src="{{ url_for('static', filename='img/'+series.sourcelogo) }}">
             <div class="series-delete">
                 <a href = "/delete?key={{ series.get_key() }}"><i class="fas fa-trash"></i></a>
+                {% for chapter in series.get_chapters() %}
+                    <br>
+                    <a href="{{ chapter.url }}" class="chapter">#{{ "{:g}".format(chapter.chapter_no) }}</a>
+                {% endfor %}
             </div>
-            <a href="{{ series.url }}"><h4 class="series-title">{{ series.title }}</h4></a>
+            <h4 class="series-title"><a href="{{ series.url }}">{{ series.title }}</a></h4>
         </div>
     {% endfor %}
     </div>

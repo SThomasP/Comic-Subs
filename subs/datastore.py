@@ -63,9 +63,9 @@ class Series(polymodel.PolyModel):
     def check_for_new_chapter(self):
         pass
 
-    def get_chapter_count(self):
+    def get_chapters(self):
         chapters = Chapter.query(ancestor=self.key).order(-Chapter.published).fetch()
-        return len(chapters)
+        return chapters
 
     # queue the check for a new chapter in this series
     def queue_new_chapter_check(self):
@@ -149,6 +149,10 @@ class Crunchyroll(Series):
     def source(self):
         return "Crunchyroll Manga"
 
+    @property
+    def sourcelogo(self):
+        return 'crunchyroll.png'
+
     def check_for_new_chapter(self):
         # use the api, rather than bothering with parsing
         r2 = requests.get(self.lookup_url)
@@ -196,6 +200,10 @@ class Comixology(Series):
         image = Series.get_data_url(image)
         s = Comixology(title=title, url=url, lookup_url=None, image=image)
         return s
+
+    @property
+    def sourcelogo(self):
+        return 'comixology.png'
 
     @property
     def source(self):
@@ -270,6 +278,10 @@ class JumpFree(Series):
     def source(self):
         return "WSJ Free Section"
 
+    @property
+    def sourcelogo(self):
+        return 'viz.png'
+
     # look for the latest chapter
     def check_for_new_chapter(self):
         r = requests.get(self.url)
@@ -303,6 +315,10 @@ class JumpMag(Series):
     @property
     def source(self):
         return "WSJ Magazine"
+
+    @property
+    def sourcelogo(self):
+        return 'viz.png'
 
     # look for the latest chapter
     def check_for_new_chapter(self):
