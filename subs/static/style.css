@@ -26,8 +26,8 @@ div.container {
     width: 50px;
     position: absolute;
     border-radius: 50%;
-    top: 4px;
-    left: 4px;
+    top: 3px;
+    left: 3px;
 }
 
 .series-list{
@@ -63,7 +63,7 @@ div.container {
 }
 
 .series{
-    width: 270px;
+    width: 250px;
     background-color: #008000;
     padding: 1%;
     margin: 1%;

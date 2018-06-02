@@ -64,7 +64,7 @@ class Series(polymodel.PolyModel):
         pass
 
     def get_chapters(self):
-        chapters = Chapter.query(ancestor=self.key).order(-Chapter.published).fetch()
+        chapters = Chapter.query(ancestor=self.key).order(Chapter.published).fetch()
         return chapters
 
     # queue the check for a new chapter in this series
