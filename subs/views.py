@@ -17,7 +17,7 @@ def check():
 @app.route("/check/<string:key>", methods=['POST'])
 def check_series(key):
     series = Series.get(key)
-    print "{} - {}".format(series.title, series.source)
+    app.logger.info("Checking '%s' (%s)", series.title, series.source)
     series.check_for_new_chapter()
     return ""
 

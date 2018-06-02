@@ -7,6 +7,7 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 from google.appengine.api import taskqueue
 import urlparse
+import base64
 
 # this allows us to use requests in GAE
 requests_toolbelt.adapters.appengine.monkeypatch()
@@ -41,7 +42,7 @@ class Series(polymodel.PolyModel):
     title = ndb.StringProperty()
     url = ndb.StringProperty()
     lookup_url = ndb.StringProperty()
-    image = ndb.StringProperty()
+    image = ndb.TextProperty()
 
     # get the key of the series object
     def get_key(self):
@@ -128,6 +129,13 @@ class Series(polymodel.PolyModel):
         else:
             return None
 
+    @staticmethod
+    def get_data_url(url):
+        r = requests.get(url)
+        data_url = 'data:image/jpeg;base64,' + base64.b64encode(r.content)
+        return data_url
+
+
     # get a series object
     @classmethod
     def get(cls, key):
@@ -172,7 +180,8 @@ class Crunchyroll(Series):
         vol_id = soup.find('li', class_='volume-simul')['volume_id']
         lookup_url = "http://api-manga.crunchyroll.com/list_chapters?volume_id={}".format(vol_id)
         image = soup.find('img',class_="poster xsmall-margin-bottom").attrs['src']
-        return Crunchyroll(title=title, url=url, lookup_url=lookup_url, image = image)
+        image = Series.get_data_url(image)
+        return Crunchyroll(title=title, url=url, lookup_url=lookup_url, image=image)
 
 
 class Comixology(Series):
@@ -184,6 +193,7 @@ class Comixology(Series):
         soup = BeautifulSoup(r.text, 'lxml')
         title = soup.find("h1", itemprop="name").text
         image = soup.find("img", class_="series-cover").attrs['src']
+        image = Series.get_data_url(image)
         s = Comixology(title=title, url=url, lookup_url=None, image=image)
         return s
 
@@ -283,8 +293,10 @@ class JumpFree(Series):
         o = urlparse.urlparse(url)
         r = requests.get('https://www.viz.com/shonenjump/chapters/all')
         soup = BeautifulSoup(r.text, 'lxml')
-        title = soup.find('a', href=o.path).text.split("\n\n\n")[1].strip()
-        image = soup.find('a', href='/shonenjump/chapters/my-hero-academia-vigilantes').img.attrs['data-original']
+        thing = soup.find('a', href=o.path)
+        title = thing.text.split("\n\n\n")[1].strip()
+        image = thing.img.attrs['data-original']
+        image = Series.get_data_url(image)
         return JumpFree(title=title, url=url, lookup_url=None, image=image)
 
 class JumpMag(Series):
@@ -306,4 +318,5 @@ class JumpMag(Series):
 
     @classmethod
     def create(cls, url):
-        return JumpMag(title="Weekly Shonen Jump", url="https://www.viz.com/shonenjump", lookup_url=None, image='http://static.libsyn.com/p/assets/4/0/5/0/4050c5d471d4740e/podcast_logo.png')
+        image = Series.get_data_url('http://static.libsyn.com/p/assets/4/0/5/0/4050c5d471d4740e/podcast_logo.png')
+        return JumpMag(title="Weekly Shonen Jump", url="https://www.viz.com/shonenjump", lookup_url=None, image=image)

@@ -13,11 +13,36 @@ body{
 
 nav{
     margin-bottom: 5px;
+    background-color: #0bba00;
 }
 
 div.container {
     width: 95%;
     margin: auto;
+}
+
+.series-list{
+
+}
+
+.series-title{
+    color:white;
+    font-family: 'Permanent Marker', cursive;
+
+}
+
+.series{
+    width: 33%;
+    background-color: #008000;
+}
+
+.series-image{
+    width: 70%;
+    margin-left: 1%;
+    margin-top: 1%;
+    margin-bottom: auto;
+    margin-right: auto;
+    height: auto;
 }
 
 form.add-comic {

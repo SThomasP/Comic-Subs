@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-<nav class="navbar navbar-dark bg-dark">
+<nav class="navbar navbar-dark">
     <h1 class="navbar-brand page-title">Comic Subs</h1>
     <form class="form-inline add-comic" method="post" action="/add">
         <div class="input-group mb-3">
@@ -36,6 +36,14 @@
         {% endfor %}
     {% endif %}
 {% endwith %}
+    <div class="series-list">
+    {% for series in series_list %}
+        <div class="series">
+            <img class="series-image" src="{{ series.image }}">
+            <h4 class="series-title">{{ series.title }}</h4>
+        </div>
+    {% endfor %}
+    </div>
 </div>
 </body>
 </html>
