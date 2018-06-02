@@ -1,6 +1,5 @@
 
 body{
-    padding-top: 7%;
     background-color: #181818;
 }
 
@@ -23,21 +22,29 @@ div.container {
 }
 
 .series-list{
-    display: flex;
-    flex-wrap: wrap;
-    flex-direction: row;
-    align-items: flex-start;
+}
+.series-delete{
+    text-align: right;
+}
+
+.series-delete a {
+    color: white;
+}
+
+.series-delete a:hover{
+    font-style: oblique;
 }
 
 .series-title{
     color:white;
     font-family: 'Permanent Marker', cursive;
     text-align: center;
+    clear: both;
 
 }
 
 .series{
-    width: 30%;
+    width: 320px;
     background-color: #008000;
     padding: 1%;
     margin: 1%;
@@ -47,6 +54,7 @@ div.container {
     width: 70%;
     height: auto;
     margin-bottom: 1%;
+    float: left;
 }
 
 form.add-comic {

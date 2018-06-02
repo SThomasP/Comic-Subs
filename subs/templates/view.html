@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-<nav class="navbar navbar-dark fixed-top">
+<nav class="navbar navbar-dark">
     <h1 class="navbar-brand page-title">Comic Subs</h1>
     <form class="form-inline add-comic" method="post" action="/add">
         <div class="input-group mb-3">
@@ -40,10 +40,16 @@
     {% for series in series_list %}
         <div class="series">
             <img class="series-image" src="{{ series.image }}">
-            <h4 class="series-title">{{ series.title }}</h4>
+            <div class="series-delete">
+                <a href = "/delete?key={{ series.get_key() }}"><i class="fas fa-trash"></i></a>
+            </div>
+            <a href="{{ series.url }}"><h4 class="series-title">{{ series.title }}</h4></a>
         </div>
     {% endfor %}
     </div>
 </div>
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.js"></script>
+<script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
