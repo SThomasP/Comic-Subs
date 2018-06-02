@@ -7,13 +7,13 @@ handlers:
   static_files: favicon.ico
   upload: favicon\.ico
 
-  # everyone can access the rss
-- url: /subscriptions.rss
+  # Anything in the 'tasks' section can only be used by admins
+- url: /tasks/.*
+  login: admin
   script: main.app
 
-  # only the admin can access anything else
+  # Everyone can see the stuff.
 - url: .*
-  login: admin
   script: main.app
 
 libraries:

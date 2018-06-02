@@ -69,7 +69,7 @@ class Series(polymodel.PolyModel):
 
     # queue the check for a new chapter in this series
     def queue_new_chapter_check(self):
-        taskqueue.add(queue_name="check-queue", url='/check/' + self.get_key())
+        taskqueue.add(queue_name="check-queue", url='/tasks/check/' + self.get_key())
 
     # add a chapter to the series
     def add_chapter(self, number, link, thumb, published):

@@ -2,10 +2,11 @@ import flask
 from subs import app
 from datastore import Series, Chapter
 from feed import Feed
+from google.appengine.api import users
 
 
 # queue all series for a new chapter check
-@app.route("/check")
+@app.route("/tasks/schedule")
 def check():
     series_list = Series.get_all()
     for series in series_list:
@@ -14,7 +15,7 @@ def check():
 
 
 # check a series for a new chapter
-@app.route("/check/<string:key>", methods=['POST'])
+@app.route("/tasks/check/<string:key>", methods=['POST'])
 def check_series(key):
     series = Series.get(key)
     app.logger.info("Checking '%s' (%s)", series.title, series.source)
@@ -25,12 +26,19 @@ def check_series(key):
 # view all series and add and remove them
 @app.route("/")
 def view():
+    is_admin = users.is_current_user_admin()
+    if users.get_current_user():
+        is_user = True
+        login_url = users.create_logout_url("/")
+    else:
+        is_user = False
+        login_url = users.create_login_url("/")
     series_list = Series.get_all()
-    return flask.render_template('view.html', series_list=series_list)
+    return flask.render_template('view.html', series_list=series_list, is_admin=is_admin, is_user=is_user, login_url=login_url)
 
 
 # delete a series from the list
-@app.route("/delete")
+@app.route("/tasks/delete")
 def delete():
     key = flask.request.args.get('key')
     s = Series.delete(key)
@@ -39,7 +47,7 @@ def delete():
 
 
 # add a series to the list
-@app.route("/add", methods=['GET','POST'])
+@app.route("/tasks/add", methods=['GET','POST'])
 def add():
     url = flask.request.form['url']
     try:

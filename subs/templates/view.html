@@ -13,7 +13,8 @@
 <body>
 <nav class="navbar navbar-dark">
     <h1 class="navbar-brand page-title">Comic Subs</h1>
-    <form class="form-inline add-comic" method="post" action="/add">
+    {% if is_admin %}
+    <form class="form-inline add-comic" method="post" action="/tasks/add">
         <div class="input-group mb-3">
             <input type="text" class="form-control" placeholder="Add Comic" aria-label="Url of New Comic"
                    aria-describedby="basic-addon2" name="url">
@@ -22,6 +23,18 @@
             </div>
         </div>
     </form>
+    {% else %}
+        <div class="add-comic"></div>
+    {% endif %}
+    <h1 class="navbar-text">
+        <a href="{{ login_url }}">
+            {% if is_user %}
+            <i class="fas fa-lock"></i>
+            {% else %}
+            <i class="fas fa-unlock"></i>
+            {% endif %}
+        </a>
+    </h1>
     <h1 class="navbar-text">
         <a href="/subscriptions.rss"><i class="fas fa-rss"></i></a>
     </h1>
@@ -42,10 +55,11 @@
             <img class="series-image" src="{{ series.image }}">
             <img class="source-logo" src="{{ url_for('static', filename='img/'+series.sourcelogo) }}">
             <div class="series-delete">
-                <a href = "/delete?key={{ series.get_key() }}"><i class="fas fa-trash"></i></a>
+                {% if is_admin %}
+                    <a href = "/tasks/delete?key={{ series.get_key() }}"><i class="fas fa-trash"></i></a><br>
+                {% endif %}
                 {% for chapter in series.get_chapters() %}
-                    <br>
-                    <a href="{{ chapter.url }}" class="chapter">#{{ "{:g}".format(chapter.chapter_no) }}</a>
+                    <a href="{{ chapter.url }}" class="chapter">#{{ "{:g}".format(chapter.chapter_no) }}</a><br>
                 {% endfor %}
             </div>
             <h4 class="series-title"><a href="{{ series.url }}">{{ series.title }}</a></h4>

@@ -1,5 +1,5 @@
 # schedule new checks every hour
 cron:
 - description: "Check For New Chapters"
-  url: /check
+  url: /tasks/schedule
   schedule: every 2 hours

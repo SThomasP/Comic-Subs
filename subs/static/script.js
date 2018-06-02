@@ -1,7 +1,4 @@
 $('.series-list').masonry({
-    itemSelector: '.series'
+    itemSelector: '.series',
+    fitWidth: true
 });
-
-for (var obj in $('.source-logo')) {
-    
-}

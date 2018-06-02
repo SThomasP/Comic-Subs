@@ -16,11 +16,6 @@ nav{
     background-color: #0bba00;
 }
 
-div.container {
-    width: 95%;
-    margin: auto;
-
-}
 
 .source-logo{
     width: 50px;
@@ -31,6 +26,8 @@ div.container {
 }
 
 .series-list{
+    margin-left: auto;
+    margin-right: auto;
 }
 .series-delete{
     text-align: right;
@@ -63,10 +60,10 @@ div.container {
 }
 
 .series{
-    width: 250px;
+    width: 270px;
     background-color: #008000;
-    padding: 1%;
-    margin: 1%;
+    padding: 15px;
+    margin: 10px;
 }
 
 .series-image{
@@ -79,6 +76,6 @@ div.container {
     float: left;
 }
 
-form.add-comic {
+.add-comic {
     width: 70%;
  }
