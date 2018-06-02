@@ -94,7 +94,7 @@ class Series(polymodel.PolyModel):
     # get all the series in a list
     @classmethod
     def get_all(cls):
-        return Series.query().order(Series.title).fetch()
+        return Series.query().fetch()
 
     # delete a series
     @classmethod

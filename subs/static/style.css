@@ -1,5 +1,6 @@
 
 body{
+    padding-top: 7%;
     background-color: #181818;
 }
 
@@ -22,27 +23,30 @@ div.container {
 }
 
 .series-list{
-
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    align-items: flex-start;
 }
 
 .series-title{
     color:white;
     font-family: 'Permanent Marker', cursive;
+    text-align: center;
 
 }
 
 .series{
-    width: 33%;
+    width: 30%;
     background-color: #008000;
+    padding: 1%;
+    margin: 1%;
 }
 
 .series-image{
     width: 70%;
-    margin-left: 1%;
-    margin-top: 1%;
-    margin-bottom: auto;
-    margin-right: auto;
     height: auto;
+    margin-bottom: 1%;
 }
 
 form.add-comic {
