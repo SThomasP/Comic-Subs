@@ -1,3 +1,5 @@
+import random
+
 import flask
 from subs import app
 from datastore import Series, Chapter
@@ -33,7 +35,8 @@ def view():
     else:
         is_user = False
         login_url = users.create_login_url("/")
-    series_list = Series.get_all()
+    series_list = [x for x in Series.get_all()]
+    random.shuffle(series_list)
     return flask.render_template('view.html', series_list=series_list, is_admin=is_admin, is_user=is_user, login_url=login_url)
 
 

@@ -9,6 +9,7 @@
           integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
     <link href="https://fonts.googleapis.com/css?family=Permanent+Marker" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='img/favicon.png') }}">
 </head>
 <body>
 <nav class="navbar navbar-dark">
@@ -52,7 +53,7 @@
     <div class="series-list">
     {% for series in series_list %}
         <div class="series">
-            <img class="series-image" src="{{ series.image }}">
+            <a href="{{ series.url }}"><img class="series-image" src="{{ series.image }}"></a>
             <img class="source-logo" src="{{ url_for('static', filename='img/'+series.sourcelogo) }}">
             <div class="series-delete">
                 {% if is_admin %}
