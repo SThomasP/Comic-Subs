@@ -13,6 +13,17 @@ indexes:
 - kind: Chapter
   ancestor: yes
   properties:
+  - name: chapter_no
+
+- kind: Chapter
+  ancestor: yes
+  properties:
+  - name: chapter_no
+    direction: desc
+
+- kind: Chapter
+  ancestor: yes
+  properties:
   - name: published
 
 - kind: Chapter

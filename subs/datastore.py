@@ -91,6 +91,14 @@ class Series(polymodel.PolyModel):
         else:
             return last_chapter[0].published
 
+    def get_last_chapter_number(self):
+        last_chapter = Chapter.query(ancestor=self.key).order(-Chapter.chapter_no).fetch(1)
+        if len(last_chapter) == 0:
+            # if no chapters, return datetime.min
+            return -1
+        else:
+            return last_chapter[0].chapter_no
+
     # get all the series in a list
     @classmethod
     def get_all(cls):
@@ -158,22 +166,28 @@ class Crunchyroll(Series):
         r2 = requests.get(self.lookup_url)
         r_json = r2.json()
         # get the last chapter
-        latest = r_json['chapters'][::-1][0]
+        chapters = r_json['chapters'][::-1]
         # get the number
-        c_number = float(latest['number'])
-        c_img_url = latest['thumb_img']
-        # generate the url
-        c_link_url = 'http://www.crunchyroll.com/comics_read/manga?volume_id={}&chapter_num={}'.format(
-            latest['volume_id'], c_number)
-        # and get the date
-        try:
-            c_date = datetime.strptime(latest['availability_start'][0:10], CROLL_DF)
-        except ValueError:
-            c_date = datetime.strptime(latest['updated'][0:10], CROLL_DF)
-        # check to see if it's "new"
-        if c_date > self.get_last_published():
-            # if so, add it
-            self.add_chapter(c_number, c_link_url, c_img_url, c_date)
+        last_chapter_number = self.get_last_chapter_number()
+        for chapter in chapters:
+            c_number = float(chapter['number'])
+            c_img_url = chapter['thumb_img']
+            # generate the url
+            c_link_url = 'http://www.crunchyroll.com/comics_read/manga?volume_id={}&chapter_num={}'.format(
+                chapter['volume_id'], c_number)
+            # and get the date
+            try:
+                c_date = datetime.strptime(chapter['availability_start'][0:10], CROLL_DF)
+            except ValueError:
+                c_date = datetime.strptime(chapter['updated'][0:10], CROLL_DF)
+            # check to see if it's "new"
+            if c_number > last_chapter_number:
+                # if so, add it
+                self.add_chapter(c_number, c_link_url, c_img_url, c_date)
+                if last_chapter_number == -1:
+                    break
+            else:
+                break
 
     # find the title and lookup url for the series object
     @classmethod
@@ -236,22 +250,25 @@ class Comixology(Series):
             chapters = extract_chapters(soup)
             page_count = 1
 
-        found = False
-        while len(chapters) > 0 or not found:
+        last_chapter_number = self.get_last_chapter_number()
+        while len(chapters) > 0:
             # take the last chapter
             chapter = chapters.pop()
             # if it's out, mark it found
             if chapter.find('a', class_='buy-action'):
                 # get the info
-                found = True
                 thumb = chapter.find('img')['src']
                 n = chapter.find('h6').text.split(' ')[1].split('#')[1]
                 number = float(n)
                 link = chapter.find('a', class_='content-details')['href']
                 date = Comixology._get_date(link)
                 # check the date
-                if date > self.get_last_published():
+                if number > last_chapter_number:
                     self.add_chapter(number, link, thumb, date)
+                    if last_chapter_number == -1:
+                        break
+                else:
+                    break
             # if it's not on that page go back a page and keep trying
             elif len(chapters) == 0 and page_count > 1:
                 page_count -= 1
@@ -289,15 +306,20 @@ class JumpFree(Series):
         chapters = soup.find('div', class_='o_products').contents
         while '\n' in chapters:
             chapters.remove('\n')
-        chapter = chapters[0]
-        thumb = chapter.find('img')['data-original']
-        link_url = 'https://viz.com{}'.format(chapter('a')[0]['href'])
-        ctitle = chapter.find('div', class_='type-md').text
-        number = float(ctitle[9:len(ctitle)])
-        date = chapter.find('div', class_='mar-b-md').text.replace(' ', '0')
-        date = datetime.strptime(date, JUMP_FREE_DF)
-        if date > self.get_last_published():
-            self.add_chapter(number, link_url, thumb, date)
+        last_chapter_number = self.get_last_chapter_number()
+        for chapter in chapters:
+            thumb = chapter.find('img')['data-original']
+            link_url = 'https://viz.com{}'.format(chapter('a')[0]['href'])
+            title = chapter.find('div', class_='type-md').text
+            number = float(title[9:len(title)])
+            date = chapter.find('div', class_='mar-b-md').text.replace(' ', '0')
+            date = datetime.strptime(date, JUMP_FREE_DF)
+            if number > last_chapter_number:
+                self.add_chapter(number, link_url, thumb, date)
+                if last_chapter_number == -1:
+                    break
+            else:
+                break
 
     # look at the index of series and the find the title that way
     @classmethod
@@ -329,7 +351,7 @@ class JumpMag(Series):
         link1 = "https://www.viz.com" + link1['href']
         number1 = float(link1.rsplit('/', 2)[0].rsplit('-', 1)[1])
         date1 = datetime.strptime(soup.find('h3').text, JUMP_DF)
-        if date1 > self.get_last_published():
+        if number1 > self.get_last_chapter_number():
             self.add_chapter(number1, link1, thumb1, date1)
 
     @classmethod
