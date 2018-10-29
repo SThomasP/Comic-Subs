@@ -23,7 +23,6 @@ class Chapter(ndb.Model):
     chapter_no = ndb.FloatProperty()
     published = ndb.DateTimeProperty()
     url = ndb.StringProperty()
-    thumbnail = ndb.StringProperty()
     title = ndb.ComputedProperty(lambda self: self.generate_title())
 
     # Get a list of chapters in the datastore for the rss feed
@@ -72,8 +71,8 @@ class Series(polymodel.PolyModel):
         taskqueue.add(queue_name="check-queue", url='/tasks/check/' + self.get_key())
 
     # add a chapter to the series
-    def add_chapter(self, number, link, thumb, published):
-        c = Chapter(parent=self.key, chapter_no=number, published=published, url=link, thumbnail=thumb)
+    def add_chapter(self, number, link, published):
+        c = Chapter(parent=self.key, chapter_no=number, published=published, url=link)
         c.put()
         chapters = Chapter.query(ancestor=self.key).order(-Chapter.published).fetch()
         # if there are more than 5 chapters, delete until there are 5
@@ -171,10 +170,9 @@ class Crunchyroll(Series):
         last_chapter_number = self.get_last_chapter_number()
         for chapter in chapters:
             c_number = float(chapter['number'])
-            c_img_url = chapter['thumb_img']
             # generate the url
-            c_link_url = 'http://www.crunchyroll.com/comics_read/manga?volume_id={}&chapter_num={}'.format(
-                chapter['volume_id'], c_number)
+            c_link_url = 'http://www.crunchyroll.com/comics_read/manga?series_id={}&chapter_num={}'.format(
+                chapter['series_id'], c_number)
             # and get the date
             try:
                 c_date = datetime.strptime(chapter['availability_start'][0:10], CROLL_DF)
@@ -183,7 +181,7 @@ class Crunchyroll(Series):
             # check to see if it's "new"
             if c_number > last_chapter_number:
                 # if so, add it
-                self.add_chapter(c_number, c_link_url, c_img_url, c_date)
+                self.add_chapter(c_number, c_link_url, c_date)
                 if last_chapter_number == -1:
                     break
             else:
@@ -195,11 +193,13 @@ class Crunchyroll(Series):
         r = requests.get(url)
         soup = BeautifulSoup(r.text, 'lxml')
         title = soup.find('h1', class_='ellipsis').text.split(">")[1].strip()
-        vol_id = soup.find('li', class_='volume-simul')['volume_id']
-        lookup_url = "http://api-manga.crunchyroll.com/list_chapters?volume_id={}".format(vol_id)
+        series_id = soup.find(id="sharing_add_queue_button")['group_id']
+        lookup_url = "http://api-manga.crunchyroll.com/list_chapters?series_id={}".format(series_id)
         image = soup.find('img',class_="poster xsmall-margin-bottom").attrs['src']
         image = Series.get_data_url(image)
         return Crunchyroll(title=title, url=url, lookup_url=lookup_url, image=image)
+
+
 
 
 class Comixology(Series):
@@ -257,14 +257,13 @@ class Comixology(Series):
             # if it's out, mark it found
             if chapter.find('a', class_='buy-action'):
                 # get the info
-                thumb = chapter.find('img')['src']
                 n = chapter.find('h6').text.split(' ')[1].split('#')[1]
                 number = float(n)
                 link = chapter.find('a', class_='content-details')['href']
                 date = Comixology._get_date(link)
                 # check the date
                 if number > last_chapter_number:
-                    self.add_chapter(number, link, thumb, date)
+                    self.add_chapter(number, link, date)
                     if last_chapter_number == -1:
                         break
                 else:
@@ -303,7 +302,7 @@ class JumpFree(Series):
     def check_for_new_chapter(self):
         r = requests.get(self.url)
         soup = BeautifulSoup(r.text, 'lxml')
-        chapters = soup.find('div', class_='o_products').contents
+        chapters = soup.find('div', class_='o_sort_container').contents
         while '\n' in chapters:
             chapters.remove('\n')
         last_chapter_number = self.get_last_chapter_number()
@@ -315,7 +314,7 @@ class JumpFree(Series):
             date = chapter.find('div', class_='mar-b-md').text.replace(' ', '0')
             date = datetime.strptime(date, JUMP_FREE_DF)
             if number > last_chapter_number:
-                self.add_chapter(number, link_url, thumb, date)
+                self.add_chapter(number, link_url, date)
                 if last_chapter_number == -1:
                     break
             else:
@@ -352,7 +351,7 @@ class JumpMag(Series):
         number1 = float(link1.rsplit('/', 2)[0].rsplit('-', 1)[1])
         date1 = datetime.strptime(soup.find('h3').text, JUMP_DF)
         if number1 > self.get_last_chapter_number():
-            self.add_chapter(number1, link1, thumb1, date1)
+            self.add_chapter(number1, link1, date1)
 
     @classmethod
     def create(cls, url):

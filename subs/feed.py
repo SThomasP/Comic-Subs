@@ -18,7 +18,6 @@ class Feed:
         fe.title(chapter.title)
         fe.guid(chapter.url)
         fe.link(href=chapter.url)
-        fe.description('<p><a href="{}"><img src="{}" width="200"> </img> </a></p>'.format(chapter.url, chapter.thumbnail))
         fe.pubdate(chapter.published.replace(tzinfo=utc))
 
     # return the feed's rss
