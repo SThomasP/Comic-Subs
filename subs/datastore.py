@@ -14,7 +14,6 @@ requests_toolbelt.adapters.appengine.monkeypatch()
 
 CROLL_DF = '%Y-%m-%d'
 JUMP_FREE_DF = '%B0%d,0%Y'
-JUMP_DF = "%b %d, %Y"
 CMX_DF = "%d %B %Y"
 
 
@@ -130,8 +129,6 @@ class Series(polymodel.PolyModel):
             path = o.path.split("/")[1::]
             if path[0:2] == ['shonenjump','chapters']:
                 return JumpFree.create(url)
-            elif path[0] == 'shonenjump':
-                return JumpMag.create(url)
         # if no source return None
         else:
             return None
@@ -292,7 +289,7 @@ class Comixology(Series):
 class JumpFree(Series):
     @property
     def source(self):
-        return "WSJ Free Section"
+        return "Shonen Jump"
 
     @property
     def sourcelogo(self):
@@ -307,11 +304,9 @@ class JumpFree(Series):
             chapters.remove('\n')
         last_chapter_number = self.get_last_chapter_number()
         for chapter in chapters:
-            thumb = chapter.find('img')['data-original']
-            link_url = 'https://viz.com{}'.format(chapter('a')[0]['href'])
-            title = chapter.find('div', class_='type-md').text
-            number = float(title[9:len(title)])
-            date = chapter.find('div', class_='mar-b-md').text.replace(' ', '0')
+            link_url = 'https://viz.com{}'.format(chapter('a')[0]['data-target-url'].split('?')[0])
+            number = float(chapter.find('div', class_='disp-id').text.split(' ')[1])
+            date = chapter.find('td', class_='pad-y-0').text.replace(' ', '0')
             date = datetime.strptime(date, JUMP_FREE_DF)
             if number > last_chapter_number:
                 self.add_chapter(number, link_url, date)
@@ -324,36 +319,10 @@ class JumpFree(Series):
     @classmethod
     def create(cls, url):
         o = urlparse.urlparse(url)
-        r = requests.get('https://www.viz.com/shonenjump/chapters/all')
+        r = requests.get('https://www.viz.com/shonenjump')
         soup = BeautifulSoup(r.text, 'lxml')
         thing = soup.find('a', href=o.path)
         title = thing.text.split("\n\n\n")[1].strip()
         image = thing.img.attrs['data-original']
         image = Series.get_data_url(image)
         return JumpFree(title=title, url=url, lookup_url=None, image=image)
-
-class JumpMag(Series):
-    @property
-    def source(self):
-        return "WSJ Magazine"
-
-    @property
-    def sourcelogo(self):
-        return 'viz.png'
-
-    # look for the latest chapter
-    def check_for_new_chapter(self):
-        r = requests.get(self.url)
-        soup = BeautifulSoup(r.text, 'lxml')
-        link1 = soup.find('a', class_='product-thumb')
-        thumb1 = link1.img['src']
-        link1 = "https://www.viz.com" + link1['href']
-        number1 = float(link1.rsplit('/', 2)[0].rsplit('-', 1)[1])
-        date1 = datetime.strptime(soup.find('h3').text, JUMP_DF)
-        if number1 > self.get_last_chapter_number():
-            self.add_chapter(number1, link1, date1)
-
-    @classmethod
-    def create(cls, url):
-        image = Series.get_data_url('http://static.libsyn.com/p/assets/4/0/5/0/4050c5d471d4740e/podcast_logo.png')
-        return JumpMag(title="Weekly Shonen Jump", url="https://www.viz.com/shonenjump", lookup_url=None, image=image)
