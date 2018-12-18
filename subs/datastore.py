@@ -293,7 +293,7 @@ class JumpFree(Series):
 
     @property
     def sourcelogo(self):
-        return 'viz.png'
+        return 'jump.png'
 
     # look for the latest chapter
     def check_for_new_chapter(self):
