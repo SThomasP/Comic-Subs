@@ -322,7 +322,7 @@ class JumpFree(Series):
         r = requests.get('https://www.viz.com/shonenjump')
         soup = BeautifulSoup(r.text, 'lxml')
         thing = soup.find('a', href=o.path)
-        title = thing.text.split("\n\n\n")[1].strip()
+        title = thing.contents[3].text.strip()
         image = thing.img.attrs['data-original']
         image = Series.get_data_url(image)
         return JumpFree(title=title, url=url, lookup_url=None, image=image)
